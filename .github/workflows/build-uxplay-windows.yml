@@ -47,6 +47,25 @@ jobs:
         shell: powershell
         run: git config --global core.autocrlf input
 
+      - name: Patch libuxplay audio pipeline for Reels
+        shell: pwsh
+        run: |
+          $file = "libuxplay/renderers/audio_renderer.c"
+          if (-not (Test-Path $file)) {
+          git submodule update --init --recursive
+          }
+          $c = Get-Content $file -Raw
+          
+          $c = $c.Replace('"queue ! "', '"queue max-size-buffers=5 leaky=downstream ! "')
+          $c = $c.Replace('"audioresample quality=10 ! "', '"audioresample quality=4 ! "')
+          
+          $c = $c.Replace('gst_element_set_state (renderer->pipeline, GST_STATE_READY);', 'gst_element_set_state (renderer->pipeline, GST_STATE_PAUSED);')
+          $c = $c.Replace('gst_element_set_state(renderer->pipeline, GST_STATE_READY);', 'gst_element_set_state(renderer->pipeline, GST_STATE_PAUSED);')
+          
+          $c = $c.Replace('g_string_append(launch, audiosink);', 'g_string_append(launch, "wasapisink low-latency=true async=false");')
+          
+          Set-Content $file -Value $c -NoNewline
+
       - name: check out repository
         uses: actions/checkout@v5
         with:
