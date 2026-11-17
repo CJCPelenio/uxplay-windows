@@ -47,6 +47,12 @@ jobs:
         shell: powershell
         run: git config --global core.autocrlf input
 
+      - name: check out repository
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
       - name: Patch libuxplay audio pipeline for Reels
         shell: pwsh
         run: |
@@ -65,12 +71,6 @@ jobs:
           $c = $c.Replace('g_string_append(launch, audiosink);', 'g_string_append(launch, "wasapisink low-latency=true async=false");')
           
           Set-Content $file -Value $c -NoNewline
-
-      - name: check out repository
-        uses: actions/checkout@v5
-        with:
-          submodules: recursive
-          fetch-depth: 1
 
       - name: restore Bonjour SDK cache
         uses: actions/cache@v5
