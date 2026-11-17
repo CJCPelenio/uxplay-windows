@@ -58,18 +58,17 @@ jobs:
         run: |
           $file = "libuxplay/renderers/audio_renderer.c"
           $c = Get-Content $file -Raw
-          
-          $c = $c.Replace('"queue ! "', '"queue max-size-buffers=2 leaky=downstream ! "')
+          $c = $c.Replace('"queue ! "', '"queue max-size-buffers=15 leaky=downstream ! "')
           $c = $c.Replace('"audioresample quality=10 ! "', '"audioresample quality=4 ! "')
-
-          $c = $c.Replace('gst_app_src_end_of_stream(GST_APP_SRC(renderer->appsrc));', '/* keep stream alive */')
-          $c = $c.Replace('gst_element_set_state (renderer->pipeline, GST_STATE_READY);', '/* keep pipeline in PLAYING state */')
-          $c = $c.Replace('gst_element_set_state(renderer->pipeline, GST_STATE_READY);', '/* keep pipeline in PLAYING state */')
-          
-          $c = $c.Replace('" sync=true"', '" async=false sync=false"')
-          $c = $c.Replace('" sync=false"', '" async=false sync=false"')
-          
+          $c = $c.Replace('gst_element_set_state (renderer->pipeline, GST_STATE_READY);', 'gst_element_set_state (renderer->pipeline, GST_STATE_PAUSED);')
+          $c = $c.Replace('gst_element_set_state(renderer->pipeline, GST_STATE_READY);', 'gst_element_set_state(renderer->pipeline, GST_STATE_PAUSED);')
+          $c = $c.Replace('g_string_append(launch, audiosink);', 'g_string_append(launch, "wasapisink low-latency=true");')
           Set-Content $file -Value $c -NoNewline
+          
+          $hfile = "libuxplay/lib/raop_handlers.h"
+          $h = Get-Content $hfile -Raw
+          $h = $h.Replace('"11025"', '"0"')
+          Set-Content $hfile -Value $h -NoNewline
 
       - name: restore Bonjour SDK cache
         uses: actions/cache@v5
